@@ -1,0 +1,116 @@
+Set-up
+
+Database set-up :
+Install "OracleXE213_Win64" and run "Oracle Database 21c Express Edition" for oracle sql database.
+download and install "sqldeveloper-22.2.0.173.2018-x64" and make connection with database.
+Create new databse container "hr" with password "123". (bcz this creadentials are used in the project for databse connection).
+
+details in project as follows : 
+{
+    user : "HR",
+    password : "123",
+    connectString : "localhost/xe"
+}
+
+Table Details : 
+
+	USERS table :
+Create table "users' with PK 'user_email' and for other details as follow.
+Query:
+CREATE TABLE USERS(USER_EMAIL VARCHAR2(20) PRIMARY KEY,USER_NAME VARCHAR2(20) NOT NULL,USER_PASSWORD VARCHAR2(100) NOT NULL);
+
+ALTER TABLE USERS ADD PROFILE_PIC VARCHAR2(100);
+
+ALTER TABLE USERS MODIFY(PROFILE_PIC VARCHAR2(150) DEFAULT 'https://res.cloudinary.com/myaccount/image/upload/v1664255689/no_profile_photo_fd3rkj.jpg');
+
+	POSTS table :
+Create table 'posts' with posted_by as FK by taking reference of user_email from users table with other following columns.
+Query :
+CREATE TABLE POSTS(POST_TITLE VARCHAR2(30),POST_BODY VARCHAR2(30), PHOTO VARCHAR2(100), POSTED_BY VARCHAR(30) REFERENCES USERS(user_email));
+
+ALTER TABLE POSTS ADD POSTED_BY_NAME VARCHAR(30) NOT NULL;
+
+ALTER TABLE POSTS ADD POST_ID INT PRIMARY KEY;
+
+CREATE SEQUENCE POST_ID MINVALUE 1 START WITH 1 CACHE 10;
+
+Note : while inserting we need to use NEXTVAL for post_id for auto generate in increament order.
+
+	LIKES table : 
+Create table Likes with column post_id with FK post_id taking reference from posts with other columns.
+Query :
+CREATE TABLE LIKES(POST_ID INT REFERENCES POSTS (POST_ID), LIKED_BY VARCHAR(30));
+
+	COMMENTS table :
+Create table Comments with column post_id with FK post_id taking reference from posts with other columns.
+Query : 
+CREATE TABLE COMMENTS(POST_ID INT REFERENCES POSTS (POST_ID), COMMENTED_BY VARCHAR2(30), COMMENT_TEXT VARCHAR2(80));
+
+	Follow table :
+Create table Follow with column user_email with FK user_email taking reference from users with other columns.
+Query : 
+CREATE TABLE FOLLOW(USER_EMAIL VARCHAR2(30) REFERENCES USERS(USER_EMAIL),FOLLOWING VARCHAR2(30), FOLLOWERS VARCHAR(30));
+
+Practiced and tried sql queries during project :
+
+----------------------------------USERS------------------------------------
+select * from USERS;
+CREATE TABLE USERS(USER_EMAIL VARCHAR2(20) PRIMARY KEY,USER_NAME VARCHAR2(20) NOT NULL,USER_PASSWORD VARCHAR2(20) NOT NULL);
+INSERT INTO USERS(USER_EMAIL,USER_NAME,USER_PASSWORD)VALUES('ramesh@gmail.com','ramesh','ramesh@123');
+DELETE FROM USERS WHERE USER_NAME = 'ramesh';
+ALTER TABLE USERS MODIFY USER_PASSWORD VARCHAR2(100);
+SELECT * FROM USERS WHERE USER_EMAIL = 'abhishek@gmail.com';
+ALTER TABLE USERS ADD PROFILE_PIC VARCHAR2(100);
+ALTER TABLE USERS MODIFY(PROFILE_PIC VARCHAR2(150) DEFAULT 'https://res.cloudinary.com/myaccount/image/upload/v1664255689/no_profile_photo_fd3rkj.jpg');
+TRUNCATE TABLE USERS;
+select * from users where user_email like '%nd%';
+SELECT USER_EMAIL, PROFILE_PIC FROM USERS;
+
+----------------------------------POSTS------------------------------------
+CREATE TABLE POSTS(POST_TITLE VARCHAR2(30),POST_BODY VARCHAR2(30), PHOTO VARCHAR2(100), POSTED_BY VARCHAR(30) REFERENCES
+USERS(user_email));
+INSERT INTO POSTS(POST_TITLE, POST_BODY, PHOTO,POSTED_BY, POSTED_BY_NAME,POST_ID) VALUES('Train','Journey was nice','https://res.cloudinary.com/myaccount/image/upload/v1621321432/sample.jpg','abhishek@gmail.com','Abhishek',POST_ID.NEXTVAL);
+SELECT * FROM POSTS;
+ALTER TABLE POSTS ADD POSTED_BY_NAME VARCHAR(30) NOT NULL;
+ALTER TABLE POSTS ADD POST_ID INT PRIMARY KEY;
+DELETE FROM POSTS WHERE POST_TITLE IN('posts');
+create SEQUENCE POST_ID MINVALUE 1 START WITH 1 CACHE 10;
+SELECT POST_TITLE,POST_BODY, PHOTO,POSTED_BY, POSTED_BY_NAME,posts.POST_ID, COUNT(LIKED_BY) FROM posts LEFT outer JOIN likes users as user ON posts.POST_ID = likes.POST_ID where user_email = POSTED_BY  GROUP by posts.post_id,post_title,POST_BODY, PHOTO,POSTED_BY, POSTED_BY_NAME ORDER by posts.POST_ID DESC;
+SELECT POST_TITLE,POST_BODY, PHOTO,POSTED_BY, POSTED_BY_NAME,posts.POST_ID, COUNT(LIKED_BY) FROM posts LEFT OUTER JOIN likes ON posts.POST_ID = likes.POST_ID WHERE POSTS.POST_ID = 21 GROUP by posts.post_id,post_title,POST_BODY, PHOTO,POSTED_BY, POSTED_BY_NAME;
+SELECT POST_TITLE,POST_BODY, PHOTO,POSTED_BY, POSTED_BY_NAME,posts.POST_ID, COUNT(LIKED_BY) FROM posts LEFT OUTER JOIN likes ON posts.POST_ID = likes.POST_ID WHERE POSTED_BY IN(SELECT FOLLOWING FROM FOLLOW WHERE USER_EMAIL = 'abhi@gmail.com') GROUP by posts.post_id,post_title,POST_BODY, PHOTO,POSTED_BY, POSTED_BY_NAME;
+TRUNCATE TABLE POSTS;
+
+----------------------------------LIKES------------------------------------
+CREATE TABLE LIKES(POST_ID INT, LIKED_BY VARCHAR(30));
+CREATE TABLE LIKES(POST_ID INT REFERENCES POSTS(POST_ID),LIKED_BY VARCHAR(30));
+DROP TABLE LIKES;
+INSERT INTO LIKES(POST_ID, LIKED_BY) VALUES(11,'abhishek@gmail.com');
+SELECT * FROM LIKES;
+SELECT * FROM HR.LIKES GROUP BY POST_ID, liked_by;
+DELETE FROM LIKES WHERE POST_ID = 3 AND LIKED_BY = 'abhishek@gmail.com';
+SELECT posts.POST_ID, COUNT(LIKED_BY) FROM posts INNER JOIN likes ON posts.POST_ID = likes.POST_ID GROUP by posts.post_id,post_title;
+SELECT * FROM HR.LIKES WHERE POST_ID=2 AND LIKED_BY='abhishek@gmail.com' GROUP BY POST_ID, LIKED_BY;
+TRUNCATE TABLE LIKES;
+
+----------------------------------COMMENTS------------------------------------
+CREATE TABLE COMMENTS(POST_ID INT REFERENCES POSTS(POST_ID), COMMENTED_BY VARCHAR2(30), COMMENT_TEXT VARCHAR2(80));
+SELECT * FROM HR.COMMENTS;
+INSERT INTO COMMENTS(POST_ID, COMMENTED_BY, COMMENT_TEXT) VALUES(3,'Abhishek','it mind blowing');
+TRUNCATE TABLE COMMENTS;
+
+----------------------------------FOLLOW------------------------------------
+CREATE TABLE FOLLOW(USER_EMAIL VARCHAR2(30) REFERENCES USERS(USER_EMAIL),FOLLWING VARCHAR2(30), FOLLOWERS VARCHAR(30));
+SELECT FOLLOWERS FROM FOLLOW WHERE USER_EMAIL = 'abc@gmail.com';
+SELECT FOLLOWING FROM FOLLOW WHERE USER_EMAIL = 'abc@gmail.com';
+ALTER TABLE FOLLOW RENAME COLUMN FOLLWING TO FOLLOWING;
+DELETE FROM FOLLOW WHERE USER_EMAIL = 'abc@gmail.com' AND FOLLOWERS = 'abhishek@gmail.com';
+DELETE FROM FOLLOW WHERE USER_EMAIL = 'abhishek@gmail.com' AND FOLLOWING = 'abc@gmail.com';
+SELECT FOLLOWING FROM FOLLOW WHERE USER_EMAIL = 'abhi@gmail.com';
+TRUNCATE TABLE FOLLOW;
+
+
+
+
+
+
+
